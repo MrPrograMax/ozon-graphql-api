@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:84625@db:5432/ozonDb
+    command: ["./server", "-m"]
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: ozonDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 84625
+    ports:
+      - "5430:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - db
+    volumes:
+      - ./pkg/database/schema:/migrations
+    entrypoint: [
+      "migrate", "-path", "/migrations",
+      "-database", "postgres://postgres:84625@db:5432/ozonDb?sslmode=disable",
+      "up"
+    ]
+
+volumes:
+  db_data:
